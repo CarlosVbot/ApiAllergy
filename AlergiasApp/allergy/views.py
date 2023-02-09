@@ -1,143 +1,68 @@
-from django.utils.decorators import method_decorator
-from django.http import HttpResponse 
+from django.shortcuts import render
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializer import  AllergySerializer , PatientSerializer
 from .models import Allergy, Patient
-from django.views import View
-from django.http.response import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 import json
 
-class AllergyView(View):
-    @method_decorator(csrf_exempt)
-    def dispatch(self,request ,*args , **kwargs):
-        return super().dispatch(request,*args,**kwargs)
+@api_view(['GET'])
+def apiOverview(request):
+    tasks = Patient.objects.all().order_by('-id')
+    serializer = PatientSerializer(tasks, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def taskDetailsAllergy(request,pk):
+    tasks = Allergy.objects.get(id=pk)
+    serializer = AllergySerializer(tasks,many=False)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def taskCreateAllergy(request):
+	serializer = AllergySerializer(data = json.loads(request.body))
+	if serializer.is_valid():
+		serializer.save()
+	return Response(serializer.data)
     
-    def get(self,request,id=0):
-        if request.body:
-            jd = json.loads(request.body)
-        else:
-            jd = {}
+@api_view(['PUT'])
+def taskUpdateAllergy(request, pk):
+	task = Allergy.objects.get(id=pk)
+	serializer = AllergySerializer(instance=task, data=request.data)
+	if serializer.is_valid():
+		serializer.save()
+	return Response(serializer.data)
 
-        if 'type' in jd:
-            if jd['type'] == 'patient':
-                if id>0:
-                    patients = list(Patient.objects.filter(id=id).values())
-                    if len(patients) < 1:
-                        datos = {'messasge': 'No results'}
-                    else:
-                        datos = {'messasge': 'success',  'patients':patients}
-                    return JsonResponse(datos)
-                else:
-                    patients = list(Patient.objects.values())
-                    if len(patients) < 1:
-                        datos = {'messasge': 'No results'}
-                    else:
-                        datos = {'messasge': 'success','patients':patients}                  
-                    return JsonResponse(datos)
-            elif jd['type'] == "allergy":
-                if id>0:
-                    Allergys = list(Allergy.objects.filter(id=id).values())
-                    if len(Allergys) < 1:
-                        datos = {'messasge': 'No results'}
-                    else:
-                        datos = {'messasge': 'success',  'Allergy':Allergys}
-                    return JsonResponse(datos)
-                else:
-                    Allergys = list(Allergy.objects.values())
-                    if len(Allergys) < 1:
-                        datos = {'messasge': 'No results'}
-                    else:
-                        datos = {'messasge': 'success',  'Allergy':Allergys}
-                    return JsonResponse(datos)
-        else:            
-            patients = list(Patient.objects.values())
-            allergys = list(Allergy.objects.values())
-            if len(patients) > 0:
-                datos = {'messasge': 'success', 'patients':patients, 'allergys':allergys}
-            else:
-                datos = {'messasge': 'patients not founds'}
-            return JsonResponse(datos)
-            
-       
-            
+@api_view(['DELETE'])
+def taskDeleteAllergy(request, pk):
+	task = Allergy.objects.get(id=pk)
+	task.delete()
+	return Response('Allergy succsesfully delete!')
 
-    def post(self,request):
-        jd = json.loads(request.body)
-        if 'type' in jd:
-            if jd['type']=='patient':
-                Patient.objects.create(name = jd['name'], date= jd['date'],sex= jd['sex'], address = jd['address'],allergy_id=jd['allergy'])
-                return JsonResponse ({'messasge': 'Patient create'})
-            elif jd['type']=='allergy':
-                Allergy.objects.create(nameAllergy = jd['name'])
-                return JsonResponse ({'messasge': 'Allergy create'})
-            else:    
-                return JsonResponse ({'messasge': 'type no found ...'})
-        else:
-            return JsonResponse({'messasge': 'body not has type ...'})
 
-    def put(self,request,id=0):
-        if request.body:
-            jd = json.loads(request.body)
-        else:
-            return JsonResponse({'messasge': 'not has body ...'})
-        if 'type' in jd:
-            if jd['type'] == 'patient':
-                patients = list(Patient.objects.filter(id=id).values())
-                print(patients)
-                if len(patients) < 1:
-                    datos = {'messasge': 'No results'}
-                else:
-                    patient =  Patient.objects.get(id=id)  
-                    patient.name = jd['name']  
-                    patient.date = jd['date'] 
-                    patient.sex = jd['sex'] 
-                    patient.address = jd['address'] 
-                    patient.allergy_id = jd['allergy'] 
-                    patient.save()
-                    datos = {'messasge': 'edit complete1'}
-                return JsonResponse(datos)
-            elif jd['type'] == "allergy":
-                Allergys = list(Allergy.objects.filter(id=id).values())
-                if len(Allergys) < 1:
-                        datos = {'messasge': 'No results'}
-                        return JsonResponse(datos)
-                else:
-                        Allergys =  Allergy.objects.get(id=id)  
-                        Allergys.nameAllergy = jd['name']  
-                        Allergys.save()
-                        datos = {'messasge': 'edit complete'}
-                return JsonResponse(datos)
-            else:
-                return JsonResponse({'messasge': 'body not has type ...'})
+@api_view(['GET'])
+def taskDetailsPatient(request,pk):
+    tasks = Patient.objects.get(id=pk)
+    serializer = PatientSerializer(tasks,many=False)
+    return Response(serializer.data)
 
-        else:
-            return JsonResponse({'messasge': 'body not has type ...'})
+@api_view(['POST'])
+def taskCreatePatient(request):
+	serializer = PatientSerializer(data = json.loads(request.body))
+	if serializer.is_valid():
+		serializer.save()
+	return Response(serializer.data)
     
-    def delete(self,request,id=0):
-        if request.body:
-            jd = json.loads(request.body)
-        else:
-            jd = {}
+@api_view(['PUT'])
+def taskUpdatePatient(request, pk):
+	task = Patient.objects.get(id=pk)
+	serializer = PatientSerializer(instance=task, data=request.data)
+	if serializer.is_valid():
+		serializer.save()
+	return Response(serializer.data)
 
-        if 'type' in jd:
-            if jd['type'] == 'patient':
-                if id>0:
-                    patients = list(Patient.objects.filter(id=id).values())
-                    if len(patients) > 0:
-                        Patient.objects.filter(id=id).delete()
-                        datos = {'messasge': 'complete'}
-                        return JsonResponse(datos)
-                else:                  
-                    datos = {'messasge': 'bad id'}                  
-                    return JsonResponse(datos)
-            elif jd['type'] == "allergy":
-                if id>0:
-                    Allergys = list(Allergy.objects.filter(id=id).values())
-                    if len(Allergys) > 0:
-                        Allergy.objects.filter(id=id).delete()
-                        datos = {'messasge': 'complete'}
-                    else:
-                        datos = {'messasge': 'bad id'}
-                    return JsonResponse(datos)
-                else:
-                    datos = {'messasge': 'bad id'}
-                    return JsonResponse(datos)
+@api_view(['DELETE'])
+def taskDeletePatient(request, pk):
+	task = Patient.objects.get(id=pk)
+	task.delete()
+	return Response('Patient succsesfully delete!')
