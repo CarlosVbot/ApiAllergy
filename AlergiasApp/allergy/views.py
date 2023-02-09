@@ -20,7 +20,7 @@ def taskDetailsAllergy(request,pk):
 
 @api_view(['POST'])
 def taskCreateAllergy(request):
-	serializer = AllergySerializer(data = json.loads(request.body))
+	serializer = AllergySerializer(data = request.body)
 	if serializer.is_valid():
 		serializer.save()
 	return Response(serializer.data)
@@ -48,7 +48,7 @@ def taskDetailsPatient(request,pk):
 
 @api_view(['POST'])
 def taskCreatePatient(request):
-	serializer = PatientSerializer(data = json.loads(request.body))
+	serializer = PatientSerializer(data = request.body)
 	if serializer.is_valid():
 		serializer.save()
 	return Response(serializer.data)
